@@ -1,0 +1,47 @@
+import os
+from osgeo import gdal
+import numpy as np
+
+root='/Users/zijiawang/Desktop/uhivscc/data/landcover/history/roi/'
+filenames=os.listdir(root)
+leaf1='/Users/zijiawang/Desktop/uhivscc/data/landcover/history/urban/'
+leaf2='/Users/zijiawang/Desktop/uhivscc/data/landcover/history/urban_dist/'
+
+ref = gdal.Open("/Users/zijiawang/Desktop/uhivscc/data/dem/box/resample_num51X2000Y400ASTGTMV003_N22E114_dem")
+proj = ref.GetProjection()
+geotrans = ref.GetGeoTransform()
+
+for yr in range(2002,2021):
+    lc_type=np.array(gdal.Open(root+str(yr)).ReadAsArray())
+    lc_type[lc_type<13]=0
+    lc_type[lc_type>13]=0
+    lc_type[lc_type==13]=1
+    driver = gdal.GetDriverByName("GTiff")
+    ds = driver.Create(leaf1+str(yr), lc_type.shape[1], lc_type.shape[0], 1, gdal.GDT_Float64)
+    ds.SetProjection(proj)
+    ds.SetGeoTransform(geotrans)
+    band = ds.GetRasterBand(1)
+    band.WriteArray(lc_type)
+
+    lc_type=np.array(gdal.Open(root+str(yr)).ReadAsArray())
+    lc_type[lc_type<13]=1
+    lc_type[lc_type>13]=1
+    lc_type[lc_type==13]=0
+    urban=np.argwhere(lc_type==0)
+    nonurban=np.argwhere(lc_type==1)
+
+    dist_collections=[]
+    for i in nonurban:
+        for j in urban:
+            dist_collections.append(np.sqrt(np.sum((nonurban[i]-urban[j]) ** 2)))
+        row=i[0]
+        col=i[1]
+        lc_type[row][col]=min(dist_collections)
+        lc_type[lc_type==0]=1
+
+    driver = gdal.GetDriverByName("GTiff")
+    ds = driver.Create(leaf2+str(yr), lc_type.shape[1], lc_type.shape[0], 1, gdal.GDT_Float64)
+    ds.SetProjection(proj)
+    ds.SetGeoTransform(geotrans)
+    band = ds.GetRasterBand(1)
+    band.WriteArray(lc_type)
