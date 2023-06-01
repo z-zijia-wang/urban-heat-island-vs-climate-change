@@ -1,0 +1,37 @@
+import os
+from osgeo import gdal
+import numpy as np
+import datetime
+
+root='/Users/zijiawang/Desktop/uhivscc/data/phenology/box/'
+filenames=os.listdir(root)
+leaf='/Users/zijiawang/Desktop/uhivscc/data/phenology/delta_p/'
+
+ref=gdal.Open("/Users/zijiawang/Desktop/uhivscc/data/dem/box/resample_num51X2000Y400ASTGTMV003_N22E114_dem")
+proj = ref.GetProjection()
+geotrans = ref.GetGeoTransform()
+
+year = "2001-01-01"
+d1 = datetime.datetime.strptime(year, "%Y-%m-%d")
+d2 = datetime.datetime.strptime("1970-01-01", "%Y-%m-%d")
+t = d1 - d2
+prev=(np.array(gdal.Open(root+"2001").ReadAsArray()))[0]
+prev[prev==32767]=t.days
+prev=prev-t.days
+
+for yr in range(2002,2022):
+    year=str(yr)+"-01-01"
+    d1=datetime.datetime.strptime(year,"%Y-%m-%d")
+    d2=datetime.datetime.strptime("1970-01-01","%Y-%m-%d")
+    t=d1-d2
+    curr=(np.array(gdal.Open(root+str(yr)).ReadAsArray()))[0]
+    curr[curr==32767]=t.days
+    curr=curr-t.days
+    delta_p=curr-prev
+    driver=gdal.GetDriverByName("GTiff")
+    ds=driver.Create(leaf+str(yr), delta_p.shape[1], delta_p.shape[0], 1, gdal.GDT_Float64)
+    ds.SetProjection(proj)
+    ds.SetGeoTransform(geotrans)
+    band = ds.GetRasterBand(1)
+    band.WriteArray(delta_p)
+    prev=curr
