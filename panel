@@ -1,0 +1,38 @@
+import numpy as np
+import pandas as pd
+from osgeo import gdal
+
+# dem
+dem=np.array(gdal.Open("/Users/zijiawang/Desktop/uhivscc/data/dem/box/resample_num51X2000Y400ASTGTMV003_N22E114_dem").ReadAsArray())[0].flatten()
+
+for num in range(len(dem)):
+    df_entity=[]
+    df_year=[]
+    df_dem=[]
+    df_urban=[]
+    df_urban_dist=[]
+    df_delta_p=[]
+    for yr in range(2002, 2021):
+        df_entity.append(num)
+        df_year.append(yr)
+        # dem
+        dem = np.array(gdal.Open(
+            "/Users/zijiawang/Desktop/uhivscc/data/dem/box/resample_num51X2000Y400ASTGTMV003_N22E114_dem").ReadAsArray())[
+            0].flatten()
+        df_dem.append(dem[num])
+        # urban
+        urban = np.array(
+            gdal.Open("/Users/zijiawang/Desktop/uhivscc/data/landcover/history/urban/" + str(yr)).ReadAsArray()).flatten()
+        df_urban.append(urban[num])
+        # urban_dist
+        urban_dist = np.array(
+            gdal.Open("/Users/zijiawang/Desktop/uhivscc/data/landcover/history/urban_dist/" + str(yr)).ReadAsArray()).flatten()
+        df_urban_dist.append(urban_dist[num])
+        # delta_p
+        delta_p = np.array(
+            gdal.Open("/Users/zijiawang/Desktop/uhivscc/data/phenology/delta_p/" + str(yr)).ReadAsArray()).flatten()
+        df_delta_p.append(delta_p[num])
+    # mosaic
+    data_array = np.transpose(np.stack((df_entity,df_year,df_dem, df_urban, df_urban_dist, df_delta_p)))
+    data_frame=pd.DataFrame(data_array)
+    data_frame.to_csv("/Users/zijiawang/Desktop/uhivscc/data/dataframe/"+"num"+str(num)+".csv")
