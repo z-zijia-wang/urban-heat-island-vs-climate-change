@@ -1,0 +1,27 @@
+import os
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from linearmodels.panel import PanelOLS
+
+root='/Users/zijiawang/Desktop/uhivscc/data/dataframe/'
+filenames=os.listdir(root)
+
+for num in range(1332):
+    curr = pd.DataFrame(pd.read_csv('/Users/zijiawang/Desktop/uhivscc/data/dataframe/num'+ str(num)+'.csv',header=0,names=['id','entity','year','dem', 'urban', 'urban_dist', 'delta_p']))
+    if num==0:
+        df=curr
+    else:
+        df=pd.concat([df,curr])
+df = df.set_index(['entity','year'])
+
+exog = sm.add_constant(df[['dem','urban_dist']])
+df_fe = PanelOLS(df['delta_p'], exog, entity_effects=True, time_effects=True)
+df_fe = df_fe.fit()
+print(df_fe)
+df_fet = PanelOLS.from_formula("delta_p ~ dem + urban_dist + EntityEffects + TimeEffects", data=df)
+print(df_fet.fit())
+
+reg = smf.ols(formula='delta_p ~ C(urban)+ dem + urban_dist',data=df)
+results = reg.fit()
+print(results.summary())
