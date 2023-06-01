@@ -1,0 +1,34 @@
+import os
+from osgeo import gdal
+import pygrib
+import numpy as np
+
+root="/Users/zijiawang/Desktop/uhivscc/data/climate/history/temp_dataset-ecv-for-climate-change-09f7b9ed-ba78-4467-9329-188938ec927a/"
+filenames=os.listdir(root)
+leaf="/Users/zijiawang/Desktop/uhivscc/data/climate/history/temp_tiff/"
+
+for year in range(2002,2022):
+    res = np.zeros((721, 1440))
+    year=str(year)
+    for f in filenames:
+        if len(f)<10:
+            continue
+        if f[25:29]!=year:
+            continue
+        gribfile = pygrib.open(root+f)
+        gribfile.seek(0)
+        name="2 metre temperature"
+        # name="Total precipitation"
+        selected_grb = gribfile.select(name=name)[0]
+        arr, lats, lons = selected_grb.data()
+        res = np.add(res,arr)
+
+    driver = gdal.GetDriverByName("GTiff")
+    ds = driver.Create(leaf+year+".tif", res.shape[1], res.shape[0], 1, gdal.GDT_Float64)
+    ref = gdal.Open("/Users/zijiawang/Desktop/uhivscc/data/dem/ASTGTMV003_N22E113_dem.tif")
+    proj = ref.GetProjection()
+    ds.SetProjection(proj)
+    geotrans = ref.GetGeoTransform()
+    ds.SetGeoTransform(geotrans)
+    band = ds.GetRasterBand(1)
+    band.WriteArray(np.divide(res, 12))
