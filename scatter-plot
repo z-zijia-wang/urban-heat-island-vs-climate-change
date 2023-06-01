@@ -1,0 +1,24 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+
+root='/Users/zijiawang/Desktop/uhivscc/data/dataframe/'
+root='/Users/zijiawang/Desktop/uhivscc/data/dataframe/'
+
+for num in range(1332):
+    curr = pd.DataFrame(pd.read_csv('/Users/zijiawang/Desktop/uhivscc/data/dataframe/num'+ str(num)+'.csv',header=0,names=['id','year','dem', 'urban', 'urban_dist', 'delta_p']))
+    if num==0:
+        df=curr
+    else:
+        df=pd.concat([df,curr])
+df = df.set_index(['year'])
+
+fig, ax = plt.subplots()
+ay = ax.twiny()
+ax.scatter(df['dem'], df['delta_p'], color='b')
+ay.scatter(df['urban_dist'], df['delta_p'], color='orange')
+ay.scatter(df['urban'], df['delta_p'], color='r')
+plt.show()
+
+plt.xlabel("urban_dist")
+plt.ylabel("delta_p")
+plt.show()
